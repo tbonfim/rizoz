@@ -1,183 +1,43 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Respostas</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
+function encontrarRimaPorSufixo(palavra) {
+        // Se a palavra for vazia, nula ou undefined, já retorna o fallback imediatamente
+        if (!palavra) {
+            return { palavra: "cara", genero: "f" };
         }
-        .container {
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 450px;
-            text-align: center;
-        }
-        h2 {
-            color: #333;
-            margin-bottom: 20px;
-        }
-        input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-        input[type="text"]:focus {
-            border-color: #007bff;
-            outline: none;
-        }
-        button {
-            width: 100%;
-            padding: 12px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        .resultado-box {
-            margin-top: 25px;
-            padding: 15px;
-            background-color: #e9ecef;
-            border-radius: 8px;
-            min-height: 24px;
-            font-weight: bold;
-            color: #495057;
-            word-wrap: break-word;
-        }
-    </style>
-</head>
-<body>
 
-<div class="container">
-    <h2>Gerador de Resposta</h2>
-    <input type="text" id="mensagemInput" placeholder="Digite a frase aqui..." autocomplete="off">
-    <button onclick="processarResposta()">Gerar Resposta</button>
-    
-    <div class="resultado-box" id="resultado">
-        A resposta aparecerá aqui...
-    </div>
-</div>
-
-<script>
-    // Mapeamento de terminações comuns para respostas rimadas
-    // Cobre milhares de palavras terminadas com esses sons
-    const regrasRima = [
-        { sufixo: "ente", palavra: "dente", genero: "m" },       // mente, quente, gente, inteligente...
-        { sufixo: "ão", palavra: "mão", genero: "f" },          // chão, não, coração, balão...
-        { sufixo: "edo", palavra: "dedo", genero: "m" },         // lado, medo, cedo, brinquedo...
-        { sufixo: "ca", palavra: "boca", genero: "f" },          // maca, faca, teta, caneca...
-        { sufixo: "ta", palavra: "batata", genero: "f" },        // fita, rota, bota, atleta...
-        { sufixo: "te", palavra: "pente", genero: "m" },         // dente, leite, azeite...
-        { sufixo: "ra", palavra: "cara", genero: "f" },          // para, clara, hora, tora...
-        { sufixo: "co", palavra: "suco", genero: "m" },          // saco, macaco, bloco, bico...
-        { sufixo: "to", palavra: "sapato", genero: "m" },        // gato, mato, prato, espeto...
-        { sufixo: "do", palavra: "umbigo", genero: "m" },        // tudo, mudo, agudo, passu...
-        { sufixo: "go", palavra: "umbigo", genero: "m" },        // amigo, antigo, perigo...
-        { sufixo: "no", palavra: "cano", genero: "m" },          // plano, mano, pano...
-        { sufixo: "na", palavra: "banana", genero: "f" },        // cana, semana, grana...
-        { sufixo: "ma", palavra: "cama", genero: "f" },          // fama, lama, drama...
-        { sufixo: "mo", palavra: "ramo", genero: "m" },          // rumo, como, termo...
-        { sufixo: "lo", palavra: "cabelo", genero: "m" },        // gelo, selo, pelo...
-        { sufixo: "la", palavra: "gola", genero: "f" },          // bola, sola, escola...
-        { sufixo: "po", palavra: "corpo", genero: "m" },         // papo, sapo, copo...
-        { sufixo: "pa", palavra: "tripa", genero: "f" },         // capa, mapa, sopa...
-        { sufixo: "va", palavra: "uva", genero: "f" },           // chuva, luva, curva...
-        { sufixo: "vo", palavra: "povo", genero: "m" },          // novo, ovo, corvo...
-        { sufixo: "ro", palavra: "couro", genero: "m" },         // ouro, touro, muro...
-        { sufixo: "da", palavra: "bunda", genero: "f" },         // vida, ida, vinda, ferida...
-        { sufixo: "sa", palavra: "asa", genero: "f" },           // casa, mesa, rosa...
-        { sufixo: "so", palavra: "osso", genero: "m" },          // nosso, posso, fosso...
-        { sufixo: "ia", palavra: "bacia", genero: "f" },         // dia, pia, tia, melancia...
-        { sufixo: "io", palavra: "queixo", genero: "m" },        // rio, tio, fio, desafio...
-        { sufixo: "ar", palavra: "calcanhar", genero: "m" },     // falar, andar, olhar, bar...
-        { sufixo: "er", palavra: "colher", genero: "f" },        // correr, comer, querer...
-        { sufixo: "ir", palavra: "quadril", genero: "m" },       // sair, subir, fugir...
-        { sufixo: "uz", palavra: "luz", genero: "f" },           // cruz, conduz, traduz...
-        { sufixo: "is", palavra: "nariz", genero: "m" },         // fiz, quis, feliz...
-        { sufixo: "as", palavra: "costas", genero: "f" },        // mas, nas, placas...
-        { sufixo: "es", palavra: "fezes", genero: "f" },         // vezes, meses, redes...
-        { sufixo: "os", palavra: "olhos", genero: "m" },         // os, todos, modos...
-        { sufixo: "us", palavra: "ânus", genero: "m" }           // vírus, ônibus...
-    ];
-
-    // Palavras específicas que quebram a regra geral (Exceções)
-    const excecoesEspecificas = {
-        "você": { palavra: "gandhi", genero: "m" },
-        "sim": { palavra: "pudim", genero: "m" },
-        "não": { palavra: "mão", genero: "f" },
-        "tudo": { palavra: "gargalo", genero: "m" }
-    };
-
-    function normalizarEVerificarPlural(palavra) {
-        let ehPlural = false;
-        let palavraBase = palavra;
-
-        // Identifica plural básico terminando em S (mas ignora palavras que já terminam em S no singular como ânus/ônibus)
-        if (palavra.endsWith("s") && !palavra.endsWith("us") && palavra.length > 3) {
-            ehPlural = true;
-            if (palavra.endsWith("es")) {
-                palavraBase = palavra.slice(0, -2); // dentes -> dent
-            } else {
-                palavraBase = palavra.slice(0, -1); // mentes -> mente
-            }
-        }
-        return { palabraBase, ehPlural };
-    }
-
-    function encontrarRimaPorSufixo(palavra) {
-        // 1. Verifica se está na lista de exceções exatas primeiro
         if (excecoesEspecificas[palavra]) {
             return excecoesEspecificas[palavra];
         }
-
-        // 2. Varre as regras de sufixo (do mais longo para o mais curto)
+        
         for (const regra of regrasRima) {
             if (palavra.endsWith(regra.sufixo)) {
                 return regra;
             }
         }
-
-        // 3. Fallback definitivo se a palavra for muito estranha e não encaixar em nada
         return { palavra: "cara", genero: "f" };
     }
 
     function gerarResposta(mensagem) {
-        if (!mensagem.trim()) return "Por favor, digite algo.";
+        // Validação inicial para campos vazios
+        if (!mensagem || !mensagem.trim()) {
+            return "A resposta aparecerá aqui conforme você digita...";
+        }
 
         const palavras = mensagem.trim().split(" ");
-        // Limpa pontuação e acentos básicos para facilitar a busca
         let ultimaPalavra = palavras[palavras.length - 1]
             .toLowerCase()
             .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "") // remove acentos
-            .replace(/[^\w]/g, "");
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^\w]/g, ""); // Remove pontuações e símbolos
 
-        const { palabraBase, ehPlural } = normalizarEVerificarPlural(ultimaPalavra);
+        // Se após a limpeza a última palavra sumir (ex: o usuário digitou apenas "!!!"), cancela
+        if (!ultimaPalavra) {
+            return "A resposta aparecerá aqui conforme você digita...";
+        }
+
+        const { palavraBase, ehPlural } = normalizarEVerificarPlural(ultimaPalavra);
         
-        // Busca a rima por padrão de sufixo
-        const item = encontrarRimaPorSufixo(palabraBase);
+        // Agora está protegido contra undefined
+        const item = encontrarRimaPorSufixo(palavraBase || ultimaPalavra);
         
         let preposicao = item.genero === "m" ? (ehPlural ? "nos seus" : "no seu") : (ehPlural ? "nas suas" : "na sua");
         let substantivoResposta = item.palavra;
@@ -192,21 +52,3 @@
 
         return `meu pau ${preposicao} ${substantivoResposta}`;
     }
-
-    function processarResposta() {
-        const input = document.getElementById("mensagemInput").value;
-        const resultadoDiv = document.getElementById("resultado");
-        
-        const respostaFinal = gerarResposta(input);
-        resultadoDiv.innerText = respostaFinal;
-    }
-
-    document.getElementById("mensagemInput").addEventListener("keypress", function(event) {
-        if (event.key === "Enter") {
-            processarResposta();
-        }
-    });
-</script>
-
-</body>
-</html>
