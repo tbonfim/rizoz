@@ -1,4 +1,147 @@
-function encontrarRimaPorSufixo(palavra) {
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Respostas em Tempo Real</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 5px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        .status-digitando {
+            font-size: 12px;
+            color: #888;
+            height: 15px;
+            margin-bottom: 15px;
+            text-align: left;
+            padding-left: 5px;
+        }
+        .resultado-box {
+            margin-top: 10px;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 8px;
+            min-height: 24px;
+            font-weight: bold;
+            color: #495057;
+            word-wrap: break-word;
+            transition: background-color 0.3s;
+        }
+        .resultado-box.atualizado {
+            background-color: #d4edda;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Gerador de Resposta</h2>
+    <input type="text" id="mensagemInput" placeholder="Comece a digitar a frase..." autocomplete="off">
+    <div class="status-digitando" id="status"></div>
+    
+    <div class="resultado-box" id="resultado">
+        A resposta aparecerá aqui conforme você digita...
+    </div>
+</div>
+
+<script>
+    // Mapeamento de terminações comuns para respostas rimadas
+    const regrasRima = [
+        { sufixo: "ente", palavra: "dente", genero: "m" },
+        { sufixo: "ão", palavra: "mão", genero: "f" },
+        { sufixo: "edo", palavra: "dedo", genero: "m" },
+        { sufixo: "ca", palavra: "boca", genero: "f" },
+        { sufixo: "ta", palavra: "batata", genero: "f" },
+        { sufixo: "te", palavra: "pente", genero: "m" },
+        { sufixo: "ra", palavra: "cara", genero: "f" },
+        { sufixo: "co", palavra: "suco", genero: "m" },
+        { sufixo: "to", palavra: "sapato", genero: "m" },
+        { sufixo: "do", palavra: "umbigo", genero: "m" },
+        { sufixo: "go", palavra: "umbigo", genero: "m" },
+        { sufixo: "no", palavra: "cano", genero: "m" },
+        { sufixo: "na", palavra: "banana", genero: "f" },
+        { sufixo: "ma", palavra: "cama", genero: "f" },
+        { sufixo: "mo", palavra: "ramo", genero: "m" },
+        { sufixo: "lo", palavra: "cabelo", genero: "m" },
+        { sufixo: "la", palavra: "gola", genero: "f" },
+        { sufixo: "po", palavra: "corpo", genero: "m" },
+        { sufixo: "pa", palavra: "tripa", genero: "f" },
+        { sufixo: "va", palavra: "uva", genero: "f" },
+        { sufixo: "vo", palavra: "povo", genero: "m" },
+        { sufixo: "ro", palavra: "couro", genero: "m" },
+        { sufixo: "da", palavra: "bunda", genero: "f" },
+        { sufixo: "sa", palavra: "asa", genero: "f" },
+        { sufixo: "so", palavra: "osso", genero: "m" },
+        { sufixo: "ia", palavra: "bacia", genero: "f" },
+        { sufixo: "io", palavra: "queixo", genero: "m" },
+        { sufixo: "ar", palavra: "calcanhar", genero: "m" },
+        { sufixo: "er", palavra: "colher", genero: "f" },
+        { sufixo: "ir", palavra: "quadril", genero: "m" },
+        { sufixo: "uz", palavra: "luz", genero: "f" },
+        { sufixo: "is", palavra: "nariz", genero: "m" },
+        { sufixo: "as", palavra: "costas", genero: "f" },
+        { sufixo: "es", palavra: "fezes", genero: "f" },
+        { sufixo: "os", palavra: "olhos", genero: "m" },
+        { sufixo: "us", palavra: "ânus", genero: "m" }
+    ];
+
+    const excecoesEspecificas = {
+        "você": { palavra: "gandhi", genero: "m" },
+        "sim": { palavra: "pudim", genero: "m" },
+        "não": { palavra: "mão", genero: "f" },
+        "tudo": { palavra: "gargalo", genero: "m" }
+    };
+
+    function normalizarEVerificarPlural(palavra) {
+        let ehPlural = false;
+        let palavraBase = palavra;
+
+        if (palavra.endsWith("s") && !palavra.endsWith("us") && palavra.length > 3) {
+            ehPlural = true;
+            if (palavra.endsWith("es")) {
+                palavraBase = palavra.slice(0, -2);
+            } else {
+                palavraBase = palavra.slice(0, -1);
+            }
+        }
+        return { palavraBase, ehPlural };
+    }
+
+    function encontrarRimaPorSufixo(palavra) {
         // Se a palavra for vazia, nula ou undefined, já retorna o fallback imediatamente
         if (!palavra) {
             return { palavra: "cara", genero: "f" };
@@ -52,3 +195,44 @@ function encontrarRimaPorSufixo(palavra) {
 
         return `meu pau ${preposicao} ${substantivoResposta}`;
     }
+
+
+    // --- LÓGICA DO DEBOUNCE ---
+    let timeoutId;
+
+    function processarResposta() {
+        const input = document.getElementById("mensagemInput").value;
+        const resultadoDiv = document.getElementById("resultado");
+        const statusDiv = document.getElementById("status");
+        
+        // Limpa o indicador visual de digitação
+        statusDiv.innerText = "";
+        
+        // Atualiza o texto e adiciona um efeito visual rápido de sucesso
+        resultadoDiv.innerText = gerarResposta(input);
+        if (input.trim()) {
+            resultadoDiv.classList.add("atualizado");
+            setTimeout(() => resultadoDiv.classList.remove("atualizado"), 500);
+        }
+    }
+
+    // Escuta o evento de digitação do usuário
+    document.getElementById("mensagemInput").addEventListener("input", function() {
+        const statusDiv = document.getElementById("status");
+        
+        if (this.value.trim()) {
+            statusDiv.innerText = "Pensando em uma rima...";
+        } else {
+            statusDiv.innerText = "";
+        }
+
+        // Cancela o temporizador anterior se o usuário continuou digitando
+        clearTimeout(timeoutId);
+
+        // Inicia um novo temporizador de 700ms (0.7 segundos)
+        timeoutId = setTimeout(processarResposta, 700);
+    });
+</script>
+
+</body>
+</html>
